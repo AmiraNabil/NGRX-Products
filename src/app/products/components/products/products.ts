@@ -1,31 +1,28 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { Product } from '../../models/product.model';
-import { ProductStore } from '../../store/product.store';
 import { ProductListComponent } from '../product-list/product-list';
+import { ProductStore } from '../../store/product.store';
 
 @Component({
   selector: 'app-products',
+  standalone: true,
   imports: [CommonModule, ProductListComponent],
   templateUrl: './products.html',
   styleUrl: './products.css',
 })
 export class Products {
-  view: 'list' | 'form' = 'list';
+  private router = inject(Router);
+  store = inject(ProductStore);
 
-  private store = inject(ProductStore);
-
-  showForm() {
+  goToAdd() {
     this.store.clearProduct();
-    this.view = 'form';
+    this.router.navigate(['/products/add']);
   }
 
   onEditClicked(product: Product) {
     this.store.selectProduct(product);
-    this.view = 'form';
-  }
-
-  onFormDone() {
-    this.view = 'list';
+    this.router.navigate(['/products/edit', product.id]);
   }
 }

@@ -3,7 +3,7 @@ import { computed, inject } from '@angular/core';
 import { signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { catchError, EMPTY, pipe, switchMap, tap } from 'rxjs';
-import { Product } from '../models/product.model';
+import { CreateProduct, Product } from '../models/product.model';
 import { ProductService } from '../services/product';
 
 interface ProductState {
@@ -33,6 +33,7 @@ export const ProductStore = signalStore(
   })),
 
   withMethods((store, productService = inject(ProductService)) => ({
+    // Load product
     loadProducts: rxMethod<void>(
       pipe(
         switchMap(() => {
@@ -54,6 +55,56 @@ export const ProductStore = signalStore(
       ),
     ),
 
+    // Create product
+    createProduct: rxMethod<CreateProduct>(
+      pipe(
+        tap(() => updateState(store, '[Products] Create Start', { loading: true, error: null })),
+        switchMap((data) =>
+          productService.create(data).pipe(
+            tap((product: Product) =>
+              updateState(store, '[Products] Create Success', {
+                products: [product, ...store.products()],
+                loading: false,
+              }),
+            ),
+            catchError((err) => {
+              updateState(store, '[Products] Create Failure', {
+                loading: false,
+                error: err.message,
+              });
+              return EMPTY;
+            }),
+          ),
+        ),
+      ),
+    ),
+
+    // Update product
+    updateProduct: rxMethod<{ id: number; data: Partial<CreateProduct> }>(
+      pipe(
+        tap(() => updateState(store, '[Products] Update Start', { loading: true, error: null })),
+        switchMap(({ id, data }) =>
+          productService.update(id, data).pipe(
+            tap((updated: Product) =>
+              updateState(store, '[Products] Update Success', {
+                products: store.products().map((p) => (p.id === updated.id ? updated : p)),
+                loading: false,
+                selected: updated,
+              }),
+            ),
+            catchError((err) => {
+              updateState(store, '[Products] Update Failure', {
+                loading: false,
+                error: err.message,
+              });
+              return EMPTY;
+            }),
+          ),
+        ),
+      ),
+    ),
+
+    // Delete product
     deleteProduct: rxMethod<number>(
       pipe(
         tap(() => updateState(store, '[Products] Delete Start', { loading: true })),
