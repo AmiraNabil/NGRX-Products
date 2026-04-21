@@ -1,27 +1,27 @@
-import { Component } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { Product } from '../../models/product.model';
-import { ProductListComponent } from '../product-list/product-list';
 import { CommonModule } from '@angular/common';
-import { ProductActionTypes } from '../../store/product.action-types';
+import { Component, inject } from '@angular/core';
+import { Product } from '../../models/product.model';
+import { ProductStore } from '../../store/product.store';
+import { ProductListComponent } from '../product-list/product-list';
 
 @Component({
   selector: 'app-products',
-  imports: [CommonModule, ProductListComponent, ProductListComponent],
+  imports: [CommonModule, ProductListComponent],
   templateUrl: './products.html',
   styleUrl: './products.css',
 })
 export class Products {
   view: 'list' | 'form' = 'list';
 
-  constructor(private store: Store) {}
+  private store = inject(ProductStore);
 
   showForm() {
+    this.store.clearProduct();
     this.view = 'form';
   }
 
   onEditClicked(product: Product) {
-    this.store.dispatch(ProductActionTypes.selectProduct({ product }));
+    this.store.selectProduct(product);
     this.view = 'form';
   }
 

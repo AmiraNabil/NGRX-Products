@@ -1,10 +1,8 @@
-import { Component, OnInit, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Store } from '@ngrx/store';
-import { Product } from '../../models/product.model';
-import * as productSelector from '../../store/product.selectors';
+import { Component, EventEmitter, inject, OnInit, Output } from '@angular/core';
 import { NgxSkeletonLoaderModule } from 'ngx-skeleton-loader';
-import { ProductActionTypes } from '../../store/product.action-types';
+import { Product } from '../../models/product.model';
+import { ProductStore } from '../../store/product.store';
 
 @Component({
   selector: 'app-product-list',
@@ -16,13 +14,9 @@ import { ProductActionTypes } from '../../store/product.action-types';
 export class ProductListComponent implements OnInit {
   @Output() editClicked = new EventEmitter<Product>();
 
-  private store = inject(Store);
-  products$ = this.store.select(productSelector.selectProducts);
-  loading$ = this.store.select(productSelector.selectLoading);
-  error$ = this.store.select(productSelector.selectError);
-  total$ = this.store.select(productSelector.selectProducts);
+  store = inject(ProductStore);
   ngOnInit() {
-    this.store.dispatch(ProductActionTypes.loadProducts());
+    this.store.loadProducts();
   }
 
   trackById(_: number, product: Product) {
@@ -30,13 +24,13 @@ export class ProductListComponent implements OnInit {
   }
 
   onEdit(product: Product) {
-    this.store.dispatch(ProductActionTypes.selectProduct({ product }));
+    this.store.selectProduct(product);
     this.editClicked.emit(product);
   }
 
   onDelete(product: Product) {
     if (confirm(`Delete "${product.title}"?`)) {
-      this.store.dispatch(ProductActionTypes.deleteProduct({ id: product.id }));
+      this.store.deleteProduct(product.id);
     }
   }
 }
