@@ -5,17 +5,22 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { catchError, EMPTY, pipe, switchMap, tap } from 'rxjs';
 import { CreateProduct, Product } from '../models/product.model';
 import { ProductService } from '../services/product';
+import {
+  addEntity,
+  setAllEntities,
+  updateEntity,
+  withEntities,
+  removeEntity,
+} from '@ngrx/signals/entities';
 
 interface ProductState {
-  products: Product[];
-  selected: Product | null;
+  selectedId: number | null;
   loading: boolean;
   error: string | null;
 }
 
 const initialState: ProductState = {
-  products: [],
-  selected: null,
+  selectedId: null,
   loading: false,
   error: null,
 };
@@ -25,11 +30,16 @@ export const ProductStore = signalStore(
 
   withDevtools('products'),
 
+  withEntities<Product>(),
   withState(initialState),
-
   withComputed((store) => ({
-    hasProduct: computed(() => store.products().length > 0),
-    totalProducts: computed(() => store.products().length),
+    hasProduct: computed(() => store.ids().length > 0),
+    totalProducts: computed(() => store.ids().length),
+    allProducts: computed(() => store.ids().map((id) => store.entityMap()[id])),
+    selected: computed(() => {
+      const id = store.selectedId();
+      return id !== null ? (store.entityMap()[id] ?? null) : null;
+    }),
   })),
 
   withMethods((store, productService = inject(ProductService)) => ({
@@ -41,7 +51,9 @@ export const ProductStore = signalStore(
           updateState(store, '[Products] Load Start', { loading: true, error: null });
           return productService.getAll().pipe(
             tap((products: Product[]) =>
-              updateState(store, '[Products] Load Success', { products, loading: false }),
+              updateState(store, '[Products] Load Success', setAllEntities(products), {
+                loading: false,
+              }),
             ),
             catchError((err) => {
               updateState(store, '[Products] Load Failure', {
@@ -62,8 +74,7 @@ export const ProductStore = signalStore(
         switchMap((data) =>
           productService.create(data).pipe(
             tap((product: Product) =>
-              updateState(store, '[Products] Create Success', {
-                products: [product, ...store.products()],
+              updateState(store, '[Products] Create Success', addEntity(product), {
                 loading: false,
               }),
             ),
@@ -86,11 +97,15 @@ export const ProductStore = signalStore(
         switchMap(({ id, data }) =>
           productService.update(id, data).pipe(
             tap((updated: Product) =>
-              updateState(store, '[Products] Update Success', {
-                products: store.products().map((p) => (p.id === updated.id ? updated : p)),
-                loading: false,
-                selected: updated,
-              }),
+              updateState(
+                store,
+                '[Products] Update Success',
+                updateEntity({ id: updated.id, changes: updated }),
+                {
+                  loading: false,
+                  selectedId: updated.id,
+                },
+              ),
             ),
             catchError((err) => {
               updateState(store, '[Products] Update Failure', {
@@ -111,10 +126,7 @@ export const ProductStore = signalStore(
         switchMap((id) =>
           productService.delete(id).pipe(
             tap(() =>
-              updateState(store, '[Products] Delete Success', {
-                products: store.products().filter((p) => p.id !== id),
-                loading: false,
-              }),
+              updateState(store, '[Products] Delete Success', removeEntity(id), { loading: false }),
             ),
             catchError((err) => {
               updateState(store, '[Products] Delete Failure', {
@@ -129,11 +141,11 @@ export const ProductStore = signalStore(
     ),
 
     selectProduct(product: Product) {
-      updateState(store, '[Products] Select Product', { selected: product });
+      updateState(store, '[Products] Select Product', { selectedId: product.id });
     },
 
     clearProduct() {
-      updateState(store, '[Products] Clear Product', { selected: null });
+      updateState(store, '[Products] Clear Product', { selectedId: null });
     },
 
     clearError() {
