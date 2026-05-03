@@ -7,11 +7,39 @@
         <i class="fa-solid fa-box me-2 text-primary"></i>
         Products List
       </h5>
-      <button class="btn btn-primary rounded-4 px-3 py-2" (click)="goToAdd()">
-        <i class="fa-solid fa-plus me-1"></i> Add Product
-      </button>
+
+      <div class="d-flex align-items-center gap-3">
+        <!-- Add Button -->
+        <button class="btn btn-primary rounded-4 px-3 py-2" (click)="goToAdd()">
+          <i class="fa-solid fa-plus me-1"></i> Add Product
+        </button>
+
+        <!-- User Info -->
+        <div class="d-flex align-items-center gap-2" *ngIf="authStore.user()">
+          <img
+            [src]="authStore.userAvatar() || 'https://placehold.co/32x32'"
+            class="rounded-circle border"
+            style="width: 36px; height: 36px; object-fit: cover"
+            (error)="$any($event.target).src = 'https://placehold.co/36x36'"
+            [alt]="authStore.userName()"
+          />
+          <div class="d-none d-md-block">
+            <div class="fw-semibold small lh-1">{{ authStore.userName() }}</div>
+            <div class="text-muted" style="font-size: 11px">
+              {{ authStore.userRole() }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Logout Button -->
+        <button class="btn btn-outline-danger btn-sm rounded-4" (click)="logout()">
+          <i class="fa-solid fa-right-from-bracket me-1"></i>
+          <span class="d-none d-md-inline">Logout</span>
+        </button>
+      </div>
     </div>
 
+    <!-- CONTENT -->
     <div class="p-4 flex-grow-1 bg-light">
       <app-product-list (editClicked)="onEditClicked($event)"> </app-product-list>
     </div>

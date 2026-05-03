@@ -11,7 +11,7 @@ export class ProductService {
   private apiUrl = 'https://api.escuelajs.co/api/v1/products';
 
   getAll(): Observable<Product[]> {
-    return this.http.get<Product[]>(`${this.apiUrl}?limit=20&offset=0`);
+    return this.http.get<Product[]>(`${this.apiUrl}?limit=40&offset=0`);
   }
 
   create(dto: CreateProduct): Observable<Product> {
