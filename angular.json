@@ -33,6 +33,7 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/NGRX-Products/",
               "budgets": [
                 {
                   "type": "initial",
